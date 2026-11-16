@@ -120,4 +120,4 @@ La aplicación se conecta a MySQL en `localhost:3306`, base de datos **`blog_db`
 
 Desarrollado por **Iker Valls Jiménez** - 2º DAW
 
-🔗[**Enlace IA**](https://share.gemini.google/ZhwBM4xT6zzk)
+🔗[**Enlace IA**](https://loquesea)
