@@ -2,9 +2,12 @@ package springbootblog;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 @Configuration
@@ -37,7 +40,15 @@ public class SecurityConfig {
                 .permitAll()
             )
             .logout(logout -> logout
+                // Acepta POST (formularios con CSRF) y GET para poder salir escribiendo
+                // http://localhost:8080/logout directamente en la barra del navegador.
+                .logoutRequestMatcher(new OrRequestMatcher(
+                    PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.POST, "/logout"),
+                    PathPatternRequestMatcher.withDefaults().matcher(HttpMethod.GET, "/logout")
+                ))
                 .logoutSuccessUrl("/login?logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             )
             .exceptionHandling(exception -> exception
