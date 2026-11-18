@@ -96,11 +96,11 @@ public class DataInitializer {
                 post1.setPublishedAt(LocalDateTime.now().minusDays(1));
                 postRepository.save(post1);
 
-                Comment c1 = new Comment("Young Papou", "papou@example.com", "¡Excelente fotografía y gran artículo! Me encantó la perspectiva.", post1);
+                Comment c1 = new Comment(admin, "¡Excelente fotografía y gran artículo! Me encantó la perspectiva.", post1);
                 c1.setPublishedAt(LocalDateTime.now().minusHours(10));
                 commentRepository.save(c1);
 
-                Comment c2 = new Comment("Tom Junky", "tom@example.com", "Totalmente de acuerdo, los colores del paisaje son fascinantes.", post1);
+                Comment c2 = new Comment(admin, "Totalmente de acuerdo, los colores del paisaje son fascinantes.", post1);
                 c2.setPublishedAt(LocalDateTime.now().minusHours(5));
                 commentRepository.save(c2);
 

@@ -263,7 +263,7 @@ public class PageController {
         } else {
             Post post = optPost.get();
             model.addAttribute("post", post);
-            model.addAttribute("comments", commentRepository.findByPostOrderByPublishedAtDesc(post));
+            model.addAttribute("comments", commentRepository.findByPostAndParentIsNullOrderByPublishedAtDesc(post));
         }
 
         model.addAttribute("recents", postRepository.findTop5ByOrderByPublishedAtDesc());
@@ -281,31 +281,52 @@ public class PageController {
         return "redirect:/blog";
     }
 
-    // 5.7: Procesar nuevo comentario en un post
+    // 5.7: Procesar nuevo comentario en un post (requiere autenticación)
     @PostMapping("/single_post/{slug}/comment")
     public String addComment(@PathVariable("slug") String slug,
-                             @RequestParam("name") String name,
-                             @RequestParam("email") String email,
                              @RequestParam("text") String text,
-                             Model model) {
+                             @RequestParam(value = "parentId", required = false) Long parentId,
+                             Principal principal) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+
+        String trimmedText = text == null ? "" : text.trim();
+        if (trimmedText.isEmpty()) {
+            return "redirect:/single_post/" + slug + "#comments-section";
+        }
+
         Optional<Post> optPost = postRepository.findBySlug(slug);
         if (optPost.isPresent()) {
             Post post = optPost.get();
+            User author = userRepository.findByUsername(principal.getName()).orElse(null);
+            if (author == null) {
+                return "redirect:/login";
+            }
 
             Comment comment = new Comment();
-            comment.setName(name);
-            comment.setEmail(email);
-            comment.setText(text);
+            comment.setAuthor(author);
+            comment.setText(trimmedText);
             comment.setPost(post);
             comment.setPublishedAt(LocalDateTime.now());
 
+            if (parentId != null) {
+                Optional<Comment> optParent = commentRepository.findById(parentId);
+                if (optParent.isPresent()) {
+                    Comment parent = optParent.get();
+                    if (parent.getPost() != null && parent.getPost().getId().equals(post.getId())) {
+                        comment.setParent(parent);
+                    }
+                }
+            }
+
             commentRepository.save(comment);
 
-            // Aumentamos en 1 el contador de comentarios del post
+            // Aumentamos en 1 el contador total de comentarios del post (incluye respuestas)
             post.setNumComments(post.getNumComments() + 1);
             postRepository.save(post);
         }
-        return "redirect:/single_post/" + slug + "#comments-list";
+        return "redirect:/single_post/" + slug + "#comments-section";
     }
 
     // 5.9: Me gusta (AJAX con retorno JSON)

@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .ignoringRequestMatchers("/single_post/*/like")
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.POST, "/single_post/*/comment").authenticated()
                 .requestMatchers("/blog/new").authenticated()
                 .requestMatchers("/", "/about", "/blog", "/blog/**", "/contact", "/contact/**",
                                  "/single_post", "/single_post/**",

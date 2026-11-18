@@ -9,5 +9,7 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     List<Comment> findByPostOrderByPublishedAtDesc(Post post);
+
+    List<Comment> findByPostAndParentIsNullOrderByPublishedAtDesc(Post post);
 }
 

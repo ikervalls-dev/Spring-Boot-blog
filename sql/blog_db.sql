@@ -12,7 +12,7 @@
 --   ImageItem     -> images         (id, title, image_url, section, category_id)
 --   Post          -> posts          (id, title, content, image, slug, published_at,
 --                                    num_likes, num_comments, user_id)
---   Comment       -> comments       (id, name, email, text, published_at, post_id)
+--   Comment       -> comments       (id, name, email, text, published_at, post_id, user_id, parent_id)
 --   ContactMessage-> contact_messages (id, name, email, subject, message, created_at)
 --
 -- NOTA: si arrancas la app con spring.jpa.hibernate.ddl-auto=update
@@ -93,19 +93,29 @@ CREATE TABLE IF NOT EXISTS posts (
 
 -- ------------------------------------------------------------
 -- Tabla: comments  (entidad Comment)
--- post_id -> posts.id (ManyToOne con Post, obligatorio)
+-- post_id   -> posts.id    (ManyToOne con Post, obligatorio)
+-- user_id   -> users.id    (ManyToOne con User/autor, opcional por compatibilidad)
+-- parent_id -> comments.id (ManyToOne con Comment padre, para respuestas)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS comments (
     id           BIGINT       NOT NULL AUTO_INCREMENT,
-    name         VARCHAR(255) NOT NULL,
-    email        VARCHAR(255) NOT NULL,
+    name         VARCHAR(255) NULL,
+    email        VARCHAR(255) NULL,
     text         TEXT         NOT NULL,
     published_at DATETIME(6)  NOT NULL,
     post_id      BIGINT       NOT NULL,
+    user_id      BIGINT       NULL,
+    parent_id    BIGINT       NULL,
     PRIMARY KEY (id),
     KEY idx_comments_post (post_id),
+    KEY idx_comments_user (user_id),
+    KEY idx_comments_parent (parent_id),
     CONSTRAINT fk_comments_post
-        FOREIGN KEY (post_id) REFERENCES posts (id)
+        FOREIGN KEY (post_id) REFERENCES posts (id),
+    CONSTRAINT fk_comments_user
+        FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT fk_comments_parent
+        FOREIGN KEY (parent_id) REFERENCES comments (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ------------------------------------------------------------

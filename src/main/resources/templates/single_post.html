@@ -135,11 +135,64 @@
 
           <!-- Listado de comentarios -->
           <div id="comments-list">
-            <div th:each="comment, iterStat : ${comments}" th:class="${iterStat.odd} ? 'comment' : 'comment alt-comment'">
+            <div th:each="comment, iterStat : ${comments}" th:class="${iterStat.odd} ? 'comment' : 'comment alt-comment'" th:id="'comment-' + ${comment.id}">
               <h4 th:text="${comment.name}">Nombre Comentador</h4>
               <p class="time" th:text="${comment.formattedDate + ' - ' + comment.formattedTime}">9:00 AM</p>
               <hr>
-              <p th:text="${comment.text}">Texto del comentario...</p>
+              <p th:text="${comment.text}" style="white-space: pre-line;">Texto del comentario...</p>
+
+              <div sec:authorize="isAuthenticated()" style="margin-top: 10px;">
+                <button type="button" class="btn btn-xs btn-default reply-toggle"
+                        th:attr="data-target='reply-form-' + ${comment.id},data-author=${comment.name}">
+                  Responder
+                </button>
+              </div>
+
+              <!-- Respuestas -->
+              <div th:if="${comment.allReplies != null and !comment.allReplies.isEmpty()}" style="margin-top: 15px; margin-left: 30px;">
+                <div th:each="reply : ${comment.allReplies}" class="comment reply-comment" th:id="'comment-' + ${reply.id}" style="padding: 12px; margin-bottom: 10px; border-left: 3px solid #ddd;">
+                  <h5 style="margin-top: 0;">
+                    <span th:text="${reply.name}">Nombre</span>
+                    <small th:if="${reply.parent != null and comment.id != reply.parent.id}" class="text-muted">
+                      &nbsp;en respuesta a <span th:text="${reply.parent.name}">usuario</span>
+                    </small>
+                  </h5>
+                  <p class="time" th:text="${reply.formattedDate + ' - ' + reply.formattedTime}">9:00 AM</p>
+                  <p th:text="${reply.text}" style="white-space: pre-line;">Texto de la respuesta...</p>
+
+                  <div sec:authorize="isAuthenticated()" style="margin-top: 8px;">
+                    <button type="button" class="btn btn-xs btn-default reply-toggle"
+                            th:attr="data-target='reply-form-' + ${reply.id},data-author=${reply.name}">
+                      Responder
+                    </button>
+                  </div>
+
+                  <div sec:authorize="isAuthenticated()" th:id="'reply-form-' + ${reply.id}" class="reply-form" style="display: none; margin-top: 10px;">
+                    <form th:action="@{'/single_post/' + ${post.slug} + '/comment'}" method="post">
+                      <input type="hidden" name="parentId" th:value="${reply.id}">
+                      <div class="form-group" style="margin-bottom: 10px;">
+                        <label class="label-control">Responder a <span th:text="${reply.name}">usuario</span></label>
+                        <textarea name="text" class="form-control" rows="3" required placeholder="Escribe tu respuesta..."></textarea>
+                      </div>
+                      <button type="submit" class="btn btn-sm btn-info">Enviar respuesta</button>
+                      <button type="button" class="btn btn-sm btn-default reply-cancel" th:attr="data-target='reply-form-' + ${reply.id}">Cancelar</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Formulario de respuesta -->
+              <div sec:authorize="isAuthenticated()" th:id="'reply-form-' + ${comment.id}" class="reply-form" style="display: none; margin-top: 15px; margin-left: 30px;">
+                <form th:action="@{'/single_post/' + ${post.slug} + '/comment'}" method="post">
+                  <input type="hidden" name="parentId" th:value="${comment.id}">
+                  <div class="form-group">
+                    <label class="label-control">Responder a <span th:text="${comment.name}">usuario</span></label>
+                    <textarea name="text" class="form-control" rows="3" required placeholder="Escribe tu respuesta..."></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-sm btn-info">Enviar respuesta</button>
+                  <button type="button" class="btn btn-sm btn-default reply-cancel" th:attr="data-target='reply-form-' + ${comment.id}">Cancelar</button>
+                </form>
+              </div>
             </div>
 
             <div th:if="${comments == null or comments.empty}" class="well text-center" style="margin: 20px 0;">
@@ -150,27 +203,29 @@
           <hr class="line">
 
           <!-- Formulario para enviar nuevo comentario -->
-          <div id="form" class="col-xs-12 col-sm-6 col-sm-push-3">
+          <div id="form" class="col-xs-12 col-sm-8 col-sm-push-2">
             <h4 class="text-center" style="margin-bottom: 20px;">Deja tu comentario</h4>
-            <form class="form-horizontal" th:action="@{'/single_post/' + ${post.slug} + '/comment'}" method="post">
-              <div class="form-group">
-                <div class="col-xs-12 col-sm-6">
-                  <label class="label-control">Name</label>
-                  <input type="text" name="name" class="form-control" required placeholder="Tu nombre">
+
+            <div sec:authorize="isAuthenticated()">
+              <p class="text-center text-muted" style="margin-bottom: 15px;">
+                Comentando como <strong sec:authentication="name">usuario</strong>
+              </p>
+              <form class="form-horizontal" th:action="@{'/single_post/' + ${post.slug} + '/comment'}" method="post">
+                <div class="form-group">
+                  <div class="col-xs-12">
+                    <label class="label-control">Comentario</label>
+                    <textarea name="text" class="form-control" rows="4" required placeholder="Escribe tu comentario aquí..."></textarea>
+                    <button type="submit" class="btn btn-lg btn-info sr-button" style="margin-top: 15px;">ENVIAR</button>
+                  </div>
                 </div>
-                <div class="col-xs-12 col-sm-6">
-                  <label class="label-control">Email</label>
-                  <input type="email" name="email" class="form-control" required placeholder="tu@email.com">
-                </div>
-              </div>
-              <div class="form-group">
-                <div class="col-xs-12">
-                  <label class="label-control">Type Your Comment</label>
-                  <textarea name="text" class="form-control" rows="4" required placeholder="Escribe tu comentario aquí..."></textarea>
-                  <button type="submit" class="btn btn-lg btn-info sr-button" style="margin-top: 15px;">SEND</button>
-                </div>
-              </div>
-            </form>
+              </form>
+            </div>
+
+            <div sec:authorize="isAnonymous()" class="well text-center">
+              <p>Debes iniciar sesión para poder comentar y responder.</p>
+              <a th:href="@{/login}" class="btn btn-info">Iniciar sesión</a>
+              <a th:href="@{/register}" class="btn btn-default">Registrarse</a>
+            </div>
           </div>
         </div>
       </div>
@@ -229,6 +284,36 @@
                 .catch(error => console.error('Error al registrar Me gusta:', error));
             });
         }
+    });
+  </script>
+
+  <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.reply-toggle').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var targetId = btn.getAttribute('data-target');
+          var form = document.getElementById(targetId);
+          if (form) {
+            var visible = form.style.display !== 'none';
+            document.querySelectorAll('.reply-form').forEach(function (f) { f.style.display = 'none'; });
+            form.style.display = visible ? 'none' : 'block';
+            if (!visible) {
+              var textarea = form.querySelector('textarea');
+              if (textarea) { textarea.focus(); }
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll('.reply-cancel').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var targetId = btn.getAttribute('data-target');
+          var form = document.getElementById(targetId);
+          if (form) {
+            form.style.display = 'none';
+          }
+        });
+      });
     });
   </script>
 </body>
